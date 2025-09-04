@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Criminals() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({ crimeType: "", status: "" });
+  const [filters, setFilters] = useState({ crimeType: "all", status: "all" });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const user = getCurrentUser();
   const { toast } = useToast();
@@ -26,8 +26,8 @@ export default function Criminals() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
-      if (filters.crimeType) params.set("crimeType", filters.crimeType);
-      if (filters.status) params.set("status", filters.status);
+      if (filters.crimeType && filters.crimeType !== "all") params.set("crimeType", filters.crimeType);
+      if (filters.status && filters.status !== "all") params.set("status", filters.status);
       
       const response = await fetch(`/api/criminals?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch criminals");
@@ -125,7 +125,7 @@ export default function Criminals() {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="theft">Theft</SelectItem>
                   <SelectItem value="assault">Assault</SelectItem>
                   <SelectItem value="fraud">Fraud</SelectItem>
@@ -142,7 +142,7 @@ export default function Criminals() {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="closed">Closed</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>

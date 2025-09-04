@@ -26,7 +26,7 @@ export default function Operators() {
     );
   }
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 

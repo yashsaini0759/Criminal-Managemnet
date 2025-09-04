@@ -24,7 +24,7 @@ export function AddFirModal({ isOpen, onClose }: AddFirModalProps) {
     description: "",
   });
 
-  const { data: criminals = [] } = useQuery({
+  const { data: criminals = [] } = useQuery<any[]>({
     queryKey: ["/api/criminals"],
     enabled: isOpen,
   });
@@ -68,7 +68,7 @@ export function AddFirModal({ isOpen, onClose }: AddFirModalProps) {
       const validatedData = insertFirRecordSchema.parse({
         ...formData,
         firDate: formData.firDate ? new Date(formData.firDate) : new Date(),
-        criminalId: formData.criminalId || null,
+        criminalId: formData.criminalId === "none" || !formData.criminalId ? null : formData.criminalId,
       });
 
       createMutation.mutate(validatedData);
@@ -107,7 +107,7 @@ export function AddFirModal({ isOpen, onClose }: AddFirModalProps) {
                 <SelectValue placeholder="Select a criminal (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No association</SelectItem>
+                <SelectItem value="none">No association</SelectItem>
                 {criminals.map((criminal: any) => (
                   <SelectItem key={criminal.id} value={criminal.id}>
                     {criminal.name} - {criminal.firNumber || criminal.id.slice(0, 8)}

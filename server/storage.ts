@@ -149,6 +149,7 @@ export class MemStorage implements IStorage {
       ...insertUser,
       id: randomUUID(),
       password: hashedPassword,
+      role: insertUser.role || "operator",
       lastLogin: null,
       isActive: true,
       createdAt: new Date(),
@@ -188,6 +189,10 @@ export class MemStorage implements IStorage {
       ...record,
       id: randomUUID(),
       firNumber: record.firNumber || this.generateFirNumber(),
+      address: record.address || null,
+      photo: record.photo || null,
+      arrestDate: record.arrestDate || null,
+      caseStatus: record.caseStatus || "open",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -243,6 +248,8 @@ export class MemStorage implements IStorage {
       ...record,
       id: randomUUID(),
       firNumber: record.firNumber || this.generateFirNumber(),
+      criminalId: record.criminalId || null,
+      firDate: record.firDate || new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };

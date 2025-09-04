@@ -5,7 +5,14 @@ import { CrimeTypesChart } from "@/components/charts/crime-types-chart";
 import { CaseStatusChart } from "@/components/charts/case-status-chart";
 
 export default function Dashboard() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<{
+    totalCriminals: number;
+    activeFirs: number;
+    solvedCases: number;
+    pendingCases: number;
+    crimeTypeDistribution: { type: string; count: number }[];
+    caseStatusDistribution: { status: string; count: number }[];
+  }>({
     queryKey: ["/api/statistics"],
   });
 

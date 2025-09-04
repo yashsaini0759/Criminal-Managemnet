@@ -14,11 +14,11 @@ export default function Reports() {
   const [criminalDateRange, setCriminalDateRange] = useState({ from: "", to: "" });
   const [firFilter, setFirFilter] = useState("all");
 
-  const { data: criminals = [] } = useQuery({
+  const { data: criminals = [] } = useQuery<any[]>({
     queryKey: ["/api/criminals"],
   });
 
-  const { data: firs = [] } = useQuery({
+  const { data: firs = [] } = useQuery<any[]>({
     queryKey: ["/api/firs"],
   });
 

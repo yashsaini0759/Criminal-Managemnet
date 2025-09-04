@@ -69,8 +69,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
-      if (error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid user data", errors: (error as any).errors });
       }
       res.status(500).json({ message: "Failed to create user" });
     }
@@ -156,8 +156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const record = await storage.createCriminalRecord(recordData);
       res.status(201).json(record);
     } catch (error) {
-      if (error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid criminal record data", errors: error.errors });
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid criminal record data", errors: (error as any).errors });
       }
       res.status(500).json({ message: "Failed to create criminal record" });
     }
@@ -220,8 +220,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const record = await storage.createFirRecord(firData);
       res.status(201).json(record);
     } catch (error) {
-      if (error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid FIR data", errors: error.errors });
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid FIR data", errors: (error as any).errors });
       }
       res.status(500).json({ message: "Failed to create FIR record" });
     }
