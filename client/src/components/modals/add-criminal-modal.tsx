@@ -76,15 +76,38 @@ export function AddCriminalModal({ isOpen, onClose }: AddCriminalModalProps) {
     e.preventDefault();
     
     try {
-      const validatedData = insertCriminalRecordSchema.parse({
+      // Validate required fields before schema parsing
+      if (!formData.name.trim()) {
+        throw new Error("Full Name is required");
+      }
+      if (!formData.age.trim()) {
+        throw new Error("Age is required");
+      }
+      if (!formData.gender) {
+        throw new Error("Gender is required");
+      }
+      if (!formData.crimeType) {
+        throw new Error("Crime Type is required");
+      }
+
+      const dataToValidate = {
         ...formData,
         age: parseInt(formData.age),
-      });
+        arrestDate: formData.arrestDate ? new Date(formData.arrestDate) : null,
+        address: formData.address.trim() || null,
+        firNumber: formData.firNumber.trim() || null,
+      };
+
+      const validatedData = insertCriminalRecordSchema.parse(dataToValidate);
 
       const formDataToSend = new FormData();
       Object.entries(validatedData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          formDataToSend.append(key, value.toString());
+          if (key === 'arrestDate' && value instanceof Date) {
+            formDataToSend.append(key, value.toISOString());
+          } else {
+            formDataToSend.append(key, value.toString());
+          }
         }
       });
 
@@ -94,9 +117,10 @@ export function AddCriminalModal({ isOpen, onClose }: AddCriminalModalProps) {
 
       createMutation.mutate(formDataToSend);
     } catch (error) {
+      console.error("Validation error:", error);
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields correctly",
+        description: error instanceof Error ? error.message : "Please fill in all required fields correctly",
         variant: "destructive",
       });
     }
