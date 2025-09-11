@@ -145,7 +145,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/criminals", upload.single('photo'), async (req, res) => {
     try {
-      const recordData = insertCriminalRecordSchema.parse(req.body);
+      // Convert FormData values to proper types
+      const bodyData = {
+        ...req.body,
+        age: req.body.age ? parseInt(req.body.age, 10) : undefined,
+        arrestDate: req.body.arrestDate ? new Date(req.body.arrestDate) : undefined,
+      };
+
+      const recordData = insertCriminalRecordSchema.parse(bodyData);
       
       // Handle photo upload
       if (req.file) {
@@ -156,6 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const record = await storage.createCriminalRecord(recordData);
       res.status(201).json(record);
     } catch (error) {
+      console.error("Criminal creation error:", error);
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ message: "Invalid criminal record data", errors: (error as any).errors });
       }
