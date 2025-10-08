@@ -63,7 +63,7 @@ export default function CrimePrediction() {
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground" data-testid="text-page-title">Crime Prediction Analysis</h1>
+          <h1 className="text-3xl font-bold text-foreground" data-testid="heading-crime-prediction">Crime Prediction Analysis</h1>
           <p className="text-muted-foreground mt-2">ML-powered crime risk analysis across US cities</p>
         </div>
 

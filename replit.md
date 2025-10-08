@@ -2,6 +2,8 @@
 
 The Criminal Management System is a comprehensive web-based application designed for law enforcement agencies to manage criminal records and First Information Reports (FIRs). The system implements role-based access control with Admin and Operator roles, providing different permission levels for managing criminal data, FIR records, and system users. It features a modern React frontend with TypeScript and a Node.js/Express backend with PostgreSQL database integration via Drizzle ORM.
 
+**Recent Addition (Oct 2025)**: ML-powered crime prediction feature that analyzes crime patterns across 30 major US cities using RandomForest classification to identify high-risk areas and predict crime hotspots.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -56,6 +58,17 @@ The interface follows modern design principles:
 - **Accessibility**: Screen reader support and keyboard navigation
 - **Professional Aesthetics**: Clean blue, grey, white color scheme with consistent spacing
 
+## ML Crime Prediction System
+The system includes an advanced machine learning module for crime analysis and prediction:
+
+- **Dataset**: 30 major US cities with comprehensive crime statistics (violent crime, property crime, murder, robbery, assault, burglary, theft)
+- **ML Algorithm**: RandomForest Classifier trained on population density and crime patterns
+- **Risk Classification**: Cities categorized into Low (<300), Medium (300-500), High (500-700), and Critical (>700) risk levels
+- **Prediction API**: RESTful endpoints at `/api/predict/*` for real-time crime risk analysis
+- **Visualizations**: Interactive charts using Recharts (pie charts for distribution, bar charts for rankings)
+- **Dashboard Integration**: Crime Hotspot widget displays the highest-risk city with one-click navigation to detailed predictions
+- **Data Location**: Crime dataset stored in `/server/ml/crime_data.csv` for easy updates
+
 # External Dependencies
 
 ## Database
@@ -84,3 +97,9 @@ The interface follows modern design principles:
 - **bcrypt**: Password hashing and verification
 - **Input validation**: Client and server-side validation using Zod schemas
 - **File upload security**: MIME type validation and size limits for photo uploads
+
+## Machine Learning & Analytics
+- **ml-random-forest**: RandomForest classifier for crime risk prediction
+- **ml-cart**: Decision tree algorithms for classification
+- **csv-parser**: CSV data parsing for crime dataset
+- **Recharts**: Advanced data visualization library for ML predictions and analytics
