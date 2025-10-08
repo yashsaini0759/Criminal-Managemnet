@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertUserSchema, insertCriminalRecordSchema, insertFirRecordSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import multer from "multer";
+import { crimePredictor } from "./ml/crimePredictor";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -277,6 +278,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to export Excel" });
     }
   });
+
+  // Crime Prediction ML Routes
+  app.get("/api/predict/all", async (req, res) => {
+    try {
+      const predictions = crimePredictor.getAllPredictions();
+      res.json(predictions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get predictions" });
+    }
+  });
+
+  app.get("/api/predict/top-risk", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const topCities = crimePredictor.getTopRiskCities(limit);
+      res.json(topCities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get top risk cities" });
+    }
+  });
+
+  app.get("/api/predict/city/:name", async (req, res) => {
+    try {
+      const prediction = crimePredictor.getCityPrediction(req.params.name);
+      if (!prediction) {
+        return res.status(404).json({ message: "City not found" });
+      }
+      res.json(prediction);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get city prediction" });
+    }
+  });
+
+  app.get("/api/predict/distribution", async (req, res) => {
+    try {
+      const distribution = crimePredictor.getCrimeDistribution();
+      res.json(distribution);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get crime distribution" });
+    }
+  });
+
+  app.get("/api/predict/statistics", async (req, res) => {
+    try {
+      const stats = crimePredictor.getStatistics();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get statistics" });
+    }
+  });
+
+  // Initialize ML model
+  await crimePredictor.loadData();
+  console.log("✅ Crime prediction ML model loaded successfully");
 
   const httpServer = createServer(app);
   return httpServer;

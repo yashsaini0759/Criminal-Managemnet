@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Shield, Home, Users, FileText, UserCog, BarChart3, Moon, Sun, LogOut } from "lucide-react";
+import { Shield, Home, Users, FileText, UserCog, BarChart3, BrainCircuit, Moon, Sun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/components/theme-provider";
@@ -21,6 +21,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { path: "/fir-records", label: "FIR Records", icon: FileText },
     ...(isAdmin(user) ? [{ path: "/operators", label: "Operators", icon: UserCog }] : []),
     { path: "/reports", label: "Reports", icon: BarChart3 },
+    { path: "/crime-prediction", label: "Crime Prediction", icon: BrainCircuit },
   ];
 
   const handleLogout = () => {

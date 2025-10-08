@@ -17,6 +17,7 @@ import Criminals from "@/pages/criminals";
 import FirRecords from "@/pages/fir-records";
 import Operators from "@/pages/operators";
 import Reports from "@/pages/reports";
+import CrimePrediction from "@/pages/crime-prediction";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -107,6 +108,14 @@ function Router() {
         <ProtectedRoute>
           <MainLayout title="Reports" breadcrumb="Home / Reports">
             <Reports />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/crime-prediction">
+        <ProtectedRoute>
+          <MainLayout title="Crime Prediction" breadcrumb="Home / Crime Prediction">
+            <CrimePrediction />
           </MainLayout>
         </ProtectedRoute>
       </Route>

@@ -1,8 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, CheckCircle, Clock, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, FileText, CheckCircle, Clock, TrendingUp, TrendingDown, AlertTriangle, MapPin } from "lucide-react";
 import { CrimeTypesChart } from "@/components/charts/crime-types-chart";
 import { CaseStatusChart } from "@/components/charts/case-status-chart";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
+
+interface CrimeHotspot {
+  city: string;
+  state: string;
+  crimeRate: number;
+  riskLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+}
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<{
@@ -14,6 +24,11 @@ export default function Dashboard() {
     caseStatusDistribution: { status: string; count: number }[];
   }>({
     queryKey: ["/api/statistics"],
+  });
+
+  const { data: topRiskCity } = useQuery<CrimeHotspot>({
+    queryKey: ['/api/predict/top-risk'],
+    select: (data: any) => data?.[0],
   });
 
   if (isLoading) {
@@ -102,6 +117,43 @@ export default function Dashboard() {
           );
         })}
       </div>
+
+      {/* Crime Hotspot Alert */}
+      {topRiskCity && (
+        <Card className="border-red-500/20 bg-red-50 dark:bg-red-950/20" data-testid="card-crime-hotspot">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="text-white text-xl" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    Crime Hotspot Alert
+                    <Badge variant="destructive" data-testid="badge-hotspot-risk">Critical Risk</Badge>
+                  </h3>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span data-testid="text-hotspot-city">
+                        <strong className="text-foreground">{topRiskCity.city}, {topRiskCity.state}</strong> has the highest predicted crime rate
+                      </span>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Crime Rate: <strong className="text-red-600 dark:text-red-400" data-testid="text-hotspot-rate">{topRiskCity.crimeRate.toFixed(1)}</strong> per 100,000 population
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Link href="/crime-prediction">
+                <Button variant="outline" size="sm" className="border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" data-testid="button-view-predictions">
+                  View Predictions
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
