@@ -1,6 +1,42 @@
 import { type User, type InsertUser, type CriminalRecord, type InsertCriminalRecord, type FirRecord, type InsertFirRecord } from "@shared/schema";
-import { randomUUID } from "crypto";
-import bcrypt from "bcrypt";
+import { prisma } from "./prismaClient";
+
+// Type guards to ensure proper enum types
+const isUserRole = (role: string): role is "admin" | "operator" => {
+  return role === "admin" || role === "operator";
+};
+
+const isGender = (gender: string): gender is "male" | "female" | "other" => {
+  return gender === "male" || gender === "female" || gender === "other";
+};
+
+const isCaseStatus = (status: string): status is "open" | "pending" | "closed" => {
+  return status === "open" || status === "pending" || status === "closed";
+};
+
+// Transform Prisma results to match our schema types
+const transformUser = (user: any): User => ({
+  ...user,
+  role: isUserRole(user.role) ? user.role : "operator",
+  lastLogin: user.lastLogin,
+  createdAt: user.createdAt,
+});
+
+const transformCriminalRecord = (record: any): CriminalRecord => ({
+  ...record,
+  gender: isGender(record.gender) ? record.gender : "other",
+  caseStatus: isCaseStatus(record.caseStatus) ? record.caseStatus : "open",
+  arrestDate: record.arrestDate,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+});
+
+const transformFirRecord = (record: any): FirRecord => ({
+  ...record,
+  firDate: record.firDate,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+});
 
 export interface IStorage {
   // User methods
@@ -38,283 +74,250 @@ export interface IStorage {
   }>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private criminalRecords: Map<string, CriminalRecord>;
-  private firRecords: Map<string, FirRecord>;
-
-  constructor() {
-    this.users = new Map();
-    this.criminalRecords = new Map();
-    this.firRecords = new Map();
-    this.initializeDummyData();
-  }
-
-  private async initializeDummyData() {
-    // Create default admin and operator users
-    const adminPassword = await bcrypt.hash("admin123", 10);
-    const operatorPassword = await bcrypt.hash("op123", 10);
-    
-    const admin: User = {
-      id: randomUUID(),
-      username: "admin",
-      password: adminPassword,
-      role: "admin",
-      name: "John Smith",
-      lastLogin: null,
-      isActive: true,
-      createdAt: new Date(),
-    };
-    
-    const operator: User = {
-      id: randomUUID(),
-      username: "operator",
-      password: operatorPassword,
-      role: "operator",
-      name: "Sarah Wilson",
-      lastLogin: new Date(),
-      isActive: true,
-      createdAt: new Date(),
-    };
-    
-    this.users.set(admin.id, admin);
-    this.users.set(operator.id, operator);
-
-    // Create sample criminal records
-    const sampleCriminals: CriminalRecord[] = [
-      {
-        id: randomUUID(),
-        name: "Robert Johnson",
-        age: 28,
-        gender: "male",
-        crimeType: "theft",
-        firNumber: "FIR-2024-001234",
-        caseStatus: "pending",
-        arrestDate: new Date("2024-12-15"),
-        address: "123 Main St, City",
-        photo: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "Maria Garcia",
-        age: 35,
-        gender: "female",
-        crimeType: "fraud",
-        firNumber: "FIR-2024-001235",
-        caseStatus: "closed",
-        arrestDate: new Date("2024-12-10"),
-        address: "456 Oak Ave, City",
-        photo: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-
-    sampleCriminals.forEach(criminal => {
-      this.criminalRecords.set(criminal.id, criminal);
-    });
-
-    // Create sample FIR records
-    const sampleFirs: FirRecord[] = [
-      {
-        id: randomUUID(),
-        firNumber: "FIR-2024-001234",
-        criminalId: sampleCriminals[0].id,
-        firDate: new Date("2024-12-15"),
-        description: "Theft of electronic items from residential area including laptops, mobile phones, and other valuable items",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-
-    sampleFirs.forEach(fir => {
-      this.firRecords.set(fir.id, fir);
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const user = await prisma.user.findUnique({ 
+      where: { id } 
+    });
+    return user ? transformUser(user) : undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
+    return user ? transformUser(user) : undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    const user: User = {
-      ...insertUser,
-      id: randomUUID(),
-      password: hashedPassword,
-      role: insertUser.role || "operator",
-      lastLogin: null,
-      isActive: true,
-      createdAt: new Date(),
-    };
-    this.users.set(user.id, user);
-    return user;
+    const user = await prisma.user.create({
+      data: insertUser
+    });
+    return transformUser(user);
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: updates
+      });
+      return transformUser(user);
+    } catch (error) {
+      return undefined;
+    }
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    return this.users.delete(id);
+    try {
+      await prisma.user.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return users.map(transformUser);
   }
 
   // Criminal Records methods
   async getCriminalRecord(id: string): Promise<CriminalRecord | undefined> {
-    return this.criminalRecords.get(id);
+    const record = await prisma.criminalRecord.findUnique({
+      where: { id }
+    });
+    return record ? transformCriminalRecord(record) : undefined;
   }
 
   async getAllCriminalRecords(): Promise<CriminalRecord[]> {
-    return Array.from(this.criminalRecords.values());
+    const records = await prisma.criminalRecord.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return records.map(transformCriminalRecord);
   }
 
   async createCriminalRecord(record: InsertCriminalRecord): Promise<CriminalRecord> {
-    const criminal: CriminalRecord = {
-      ...record,
-      id: randomUUID(),
-      firNumber: record.firNumber || this.generateFirNumber(),
-      address: record.address || null,
-      photo: record.photo || null,
-      arrestDate: record.arrestDate || null,
-      caseStatus: record.caseStatus || "open",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.criminalRecords.set(criminal.id, criminal);
-    return criminal;
+    const criminalRecord = await prisma.criminalRecord.create({
+      data: {
+        ...record,
+        firNumber: record.firNumber || this.generateFirNumber(),
+      }
+    });
+    return transformCriminalRecord(criminalRecord);
   }
 
   async updateCriminalRecord(id: string, updates: Partial<CriminalRecord>): Promise<CriminalRecord | undefined> {
-    const record = this.criminalRecords.get(id);
-    if (!record) return undefined;
-    
-    const updatedRecord = { ...record, ...updates, updatedAt: new Date() };
-    this.criminalRecords.set(id, updatedRecord);
-    return updatedRecord;
+    try {
+      const record = await prisma.criminalRecord.update({
+        where: { id },
+        data: updates
+      });
+      return transformCriminalRecord(record);
+    } catch (error) {
+      return undefined;
+    }
   }
 
   async deleteCriminalRecord(id: string): Promise<boolean> {
-    return this.criminalRecords.delete(id);
+    try {
+      await prisma.criminalRecord.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   async searchCriminalRecords(query: string, filters: any): Promise<CriminalRecord[]> {
-    let records = Array.from(this.criminalRecords.values());
-    
+    const where: any = {
+      OR: []
+    };
+
     if (query) {
-      records = records.filter(record => 
-        record.name.toLowerCase().includes(query.toLowerCase()) ||
-        record.firNumber?.toLowerCase().includes(query.toLowerCase())
+      where.OR.push(
+        { name: { contains: query, mode: 'insensitive' } },
+        { firNumber: { contains: query, mode: 'insensitive' } }
       );
     }
-    
+
     if (filters.crimeType) {
-      records = records.filter(record => record.crimeType === filters.crimeType);
+      where.crimeType = filters.crimeType;
     }
-    
+
     if (filters.status) {
-      records = records.filter(record => record.caseStatus === filters.status);
+      where.caseStatus = filters.status;
     }
+
+    // If no query, remove the OR condition
+    if (!query) {
+      delete where.OR;
+    }
+
+    const records = await prisma.criminalRecord.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
     
-    return records;
+    return records.map(transformCriminalRecord);
   }
 
   // FIR Records methods
   async getFirRecord(id: string): Promise<FirRecord | undefined> {
-    return this.firRecords.get(id);
+    const record = await prisma.firRecord.findUnique({
+      where: { id }
+    });
+    return record ? transformFirRecord(record) : undefined;
   }
 
   async getAllFirRecords(): Promise<FirRecord[]> {
-    return Array.from(this.firRecords.values());
+    const records = await prisma.firRecord.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return records.map(transformFirRecord);
   }
 
   async createFirRecord(record: InsertFirRecord): Promise<FirRecord> {
-    const fir: FirRecord = {
-      ...record,
-      id: randomUUID(),
-      firNumber: record.firNumber || this.generateFirNumber(),
-      criminalId: record.criminalId || null,
-      firDate: record.firDate || new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.firRecords.set(fir.id, fir);
-    return fir;
+    const firRecord = await prisma.firRecord.create({
+      data: {
+        ...record,
+        firNumber: record.firNumber || this.generateFirNumber(),
+      }
+    });
+    return transformFirRecord(firRecord);
   }
 
   async updateFirRecord(id: string, updates: Partial<FirRecord>): Promise<FirRecord | undefined> {
-    const record = this.firRecords.get(id);
-    if (!record) return undefined;
-    
-    const updatedRecord = { ...record, ...updates, updatedAt: new Date() };
-    this.firRecords.set(id, updatedRecord);
-    return updatedRecord;
+    try {
+      const record = await prisma.firRecord.update({
+        where: { id },
+        data: updates
+      });
+      return transformFirRecord(record);
+    } catch (error) {
+      return undefined;
+    }
   }
 
   async deleteFirRecord(id: string): Promise<boolean> {
-    return this.firRecords.delete(id);
+    try {
+      await prisma.firRecord.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   async searchFirRecords(query: string, filters: any): Promise<FirRecord[]> {
-    let records = Array.from(this.firRecords.values());
-    
+    const where: any = {
+      OR: []
+    };
+
     if (query) {
-      records = records.filter(record => 
-        record.firNumber.toLowerCase().includes(query.toLowerCase()) ||
-        record.description.toLowerCase().includes(query.toLowerCase())
+      where.OR.push(
+        { firNumber: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } }
       );
     }
+
+    // If no query, remove the OR condition
+    if (!query) {
+      delete where.OR;
+    }
+
+    const records = await prisma.firRecord.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
     
-    return records;
+    return records.map(transformFirRecord);
   }
 
   // Statistics
   async getStatistics() {
-    const criminals = Array.from(this.criminalRecords.values());
-    const firs = Array.from(this.firRecords.values());
-    
-    const crimeTypeDistribution = criminals.reduce((acc, criminal) => {
-      const existing = acc.find(item => item.type === criminal.crimeType);
-      if (existing) {
-        existing.count++;
-      } else {
-        acc.push({ type: criminal.crimeType, count: 1 });
+    const [totalCriminals, activeFirs, criminals] = await Promise.all([
+      prisma.criminalRecord.count(),
+      prisma.firRecord.count(),
+      prisma.criminalRecord.findMany()
+    ]);
+
+    // Get crime type distribution
+    const crimeTypeDistribution = await prisma.criminalRecord.groupBy({
+      by: ['crimeType'],
+      _count: {
+        crimeType: true
       }
-      return acc;
-    }, [] as { type: string; count: number }[]);
-    
-    const caseStatusDistribution = criminals.reduce((acc, criminal) => {
-      const existing = acc.find(item => item.status === criminal.caseStatus);
-      if (existing) {
-        existing.count++;
-      } else {
-        acc.push({ status: criminal.caseStatus, count: 1 });
+    });
+
+    // Get case status distribution
+    const caseStatusDistribution = await prisma.criminalRecord.groupBy({
+      by: ['caseStatus'],
+      _count: {
+        caseStatus: true
       }
-      return acc;
-    }, [] as { status: string; count: number }[]);
-    
+    });
+
     return {
-      totalCriminals: criminals.length,
-      activeFirs: firs.length,
+      totalCriminals,
+      activeFirs,
       solvedCases: criminals.filter(c => c.caseStatus === "closed").length,
       pendingCases: criminals.filter(c => c.caseStatus === "pending").length,
-      crimeTypeDistribution,
-      caseStatusDistribution,
+      crimeTypeDistribution: crimeTypeDistribution.map(item => ({
+        type: item.crimeType,
+        count: item._count.crimeType
+      })),
+      caseStatusDistribution: caseStatusDistribution.map(item => ({
+        status: item.caseStatus,
+        count: item._count.caseStatus
+      }))
     };
   }
 
@@ -325,4 +328,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

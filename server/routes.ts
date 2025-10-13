@@ -1,10 +1,48 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertCriminalRecordSchema, insertFirRecordSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import { crimePredictor } from "./ml/crimePredictor";
+import { z } from "zod";
+
+// Define schemas inline since @shared/schema is missing
+const insertUserSchema = z.object({
+  username: z.string().min(3),
+  password: z.string().min(6),
+  role: z.enum(["admin", "operator"]).optional(),
+  name: z.string().min(1),
+});
+
+const insertCriminalRecordSchema = z.object({
+  name: z.string().min(1),
+  age: z.number().min(1).max(120),
+  gender: z.enum(["male", "female", "other"]),
+  crimeType: z.string().min(1),
+  firNumber: z.string().optional().nullable(),
+  caseStatus: z.enum(["open", "pending", "closed"]).optional(),
+  arrestDate: z.date().optional().nullable(),
+  address: z.string().optional().nullable(),
+  photo: z.string().optional().nullable(),
+});
+
+const insertFirRecordSchema = z.object({
+  firNumber: z.string().optional(),
+  criminalId: z.string().optional().nullable(),
+  firDate: z.union([z.string(), z.date()])
+    .optional()
+    .transform(val => {
+      if (!val) return new Date();
+      return val instanceof Date ? val : new Date(val);
+    })
+    .refine(val => !isNaN(val.getTime()), {
+      message: "Invalid date format"
+    }),
+  description: z.string({
+    required_error: "Description is required",
+    invalid_type_error: "Description must be a string"
+  }).min(1, "Description cannot be empty"),
+});
 
 // Configure multer for file uploads
 const upload = multer({
@@ -22,6 +60,12 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add request logging middleware
+  app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.path}`, req.query, req.body);
+    next();
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -48,6 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -59,6 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
       res.json(usersWithoutPasswords);
     } catch (error) {
+      console.error("Get users error:", error);
       res.status(500).json({ message: "Failed to fetch users" });
     }
   });
@@ -70,8 +116,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
-      if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid user data", errors: (error as any).errors });
+      console.error("Create user error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create user" });
     }
@@ -94,6 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
+      console.error("Update user error:", error);
       res.status(500).json({ message: "Failed to update user" });
     }
   });
@@ -107,6 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "User deleted successfully" });
     } catch (error) {
+      console.error("Delete user error:", error);
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
@@ -127,6 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(records);
       }
     } catch (error) {
+      console.error("Get criminals error:", error);
       res.status(500).json({ message: "Failed to fetch criminal records" });
     }
   });
@@ -140,6 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(record);
     } catch (error) {
+      console.error("Get criminal by ID error:", error);
       res.status(500).json({ message: "Failed to fetch criminal record" });
     }
   });
@@ -165,8 +216,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(record);
     } catch (error) {
       console.error("Criminal creation error:", error);
-      if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid criminal record data", errors: (error as any).errors });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid criminal record data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create criminal record" });
     }
@@ -189,6 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(record);
     } catch (error) {
+      console.error("Update criminal error:", error);
       res.status(500).json({ message: "Failed to update criminal record" });
     }
   });
@@ -202,37 +254,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "Criminal record deleted successfully" });
     } catch (error) {
+      console.error("Delete criminal error:", error);
       res.status(500).json({ message: "Failed to delete criminal record" });
     }
   });
 
-  // FIR records routes
+  // FIR records routes - FIXED VERSION
   app.get("/api/firs", async (req, res) => {
+    console.log("🔍 GET /api/firs called with query:", req.query);
+    
     try {
       const { search } = req.query;
       
+      console.log("📋 Search parameter:", search);
+      
       if (search) {
         const records = await storage.searchFirRecords(search as string, {});
+        console.log("✅ Search results:", records.length, "records found");
         res.json(records);
       } else {
         const records = await storage.getAllFirRecords();
+        console.log("✅ All FIR records:", records.length, "records found");
         res.json(records);
       }
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch FIR records" });
+      console.error("💥 GET /api/firs failed:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch FIR records",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.get("/api/firs/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const record = await storage.getFirRecord(id);
+      if (!record) {
+        return res.status(404).json({ message: "FIR record not found" });
+      }
+      res.json(record);
+    } catch (error) {
+      console.error("Get FIR by ID error:", error);
+      res.status(500).json({ message: "Failed to fetch FIR record" });
     }
   });
 
   app.post("/api/firs", async (req, res) => {
+    console.log("🚨 POST /api/firs - Request body:", req.body);
+    
     try {
-      const firData = insertFirRecordSchema.parse(req.body);
+      // Check if body exists and has description
+      if (!req.body || !req.body.description) {
+        console.log("❌ Missing description in request body");
+        return res.status(400).json({ 
+          message: "Description is required",
+          received: req.body 
+        });
+      }
+
+      console.log("🔍 Validating FIR data...");
+      
+      // More flexible schema for date handling
+      const firData = insertFirRecordSchema.parse({
+        ...req.body,
+        firDate: req.body.firDate ? new Date(req.body.firDate) : undefined
+      });
+      
+      console.log("✅ FIR data validated:", firData);
+
       const record = await storage.createFirRecord(firData);
+      console.log("🎉 FIR created successfully:", record);
+
       res.status(201).json(record);
     } catch (error) {
-      if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid FIR data", errors: (error as any).errors });
+      console.error("💥 FIR creation failed:", error);
+      
+      if (error instanceof z.ZodError) {
+        console.log("❌ Validation errors:", JSON.stringify(error.errors, null, 2));
+        return res.status(400).json({ 
+          message: "Invalid FIR data", 
+          errors: error.errors,
+          receivedData: req.body
+        });
       }
-      res.status(500).json({ message: "Failed to create FIR record" });
+      
+      res.status(500).json({ 
+        message: "Failed to create FIR record",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -246,7 +356,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(record);
     } catch (error) {
+      console.error("Update FIR error:", error);
       res.status(500).json({ message: "Failed to update FIR record" });
+    }
+  });
+
+  app.delete("/api/firs/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteFirRecord(id);
+      if (!success) {
+        return res.status(404).json({ message: "FIR record not found" });
+      }
+      res.json({ message: "FIR record deleted successfully" });
+    } catch (error) {
+      console.error("Delete FIR error:", error);
+      res.status(500).json({ message: "Failed to delete FIR record" });
     }
   });
 
@@ -256,25 +381,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getStatistics();
       res.json(stats);
     } catch (error) {
+      console.error("Get statistics error:", error);
       res.status(500).json({ message: "Failed to fetch statistics" });
     }
   });
 
+  // Debug routes
+  app.get("/api/debug/db-check", async (req, res) => {
+    try {
+      console.log("🔍 Testing database connection...");
+      
+      // Test if we can count FIR records
+      const count = await storage.getAllFirRecords();
+      console.log("✅ Database connected. FIR records count:", count.length);
+      
+      res.json({ 
+        status: "success", 
+        message: "Database is working",
+        firCount: count.length 
+      });
+    } catch (error) {
+      console.error("❌ Database test failed:", error);
+      res.status(500).json({ 
+        status: "error", 
+        message: "Database connection failed",
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.get("/api/debug/firs-status", async (req, res) => {
+  try {
+    const allFirs = await storage.getAllFirRecords();
+    console.log("📊 FIR Status - Records from storage:", allFirs.length);
+    
+    res.json({
+      storageRecords: allFirs.length,
+      records: allFirs
+    });
+  } catch (error) {
+    console.error("❌ FIR status check failed:", error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    });
+  }
+});
+
   // Export routes
   app.get("/api/export/criminals/pdf", async (req, res) => {
     try {
-      // This would generate a PDF report
       res.json({ message: "PDF export functionality would be implemented here" });
     } catch (error) {
+      console.error("PDF export error:", error);
       res.status(500).json({ message: "Failed to export PDF" });
     }
   });
 
   app.get("/api/export/criminals/excel", async (req, res) => {
     try {
-      // This would generate an Excel report
       res.json({ message: "Excel export functionality would be implemented here" });
     } catch (error) {
+      console.error("Excel export error:", error);
       res.status(500).json({ message: "Failed to export Excel" });
     }
   });
@@ -285,6 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const predictions = crimePredictor.getAllPredictions();
       res.json(predictions);
     } catch (error) {
+      console.error("Get predictions error:", error);
       res.status(500).json({ message: "Failed to get predictions" });
     }
   });
@@ -295,6 +463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const topCities = crimePredictor.getTopRiskCities(limit);
       res.json(topCities);
     } catch (error) {
+      console.error("Get top risk cities error:", error);
       res.status(500).json({ message: "Failed to get top risk cities" });
     }
   });
@@ -307,6 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(prediction);
     } catch (error) {
+      console.error("Get city prediction error:", error);
       res.status(500).json({ message: "Failed to get city prediction" });
     }
   });
@@ -316,6 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const distribution = crimePredictor.getCrimeDistribution();
       res.json(distribution);
     } catch (error) {
+      console.error("Get crime distribution error:", error);
       res.status(500).json({ message: "Failed to get crime distribution" });
     }
   });
@@ -325,13 +496,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = crimePredictor.getStatistics();
       res.json(stats);
     } catch (error) {
+      console.error("Get prediction statistics error:", error);
       res.status(500).json({ message: "Failed to get statistics" });
     }
   });
 
   // Initialize ML model
-  await crimePredictor.loadData();
-  console.log("✅ Crime prediction ML model loaded successfully");
+  try {
+    await crimePredictor.loadData();
+    console.log("✅ Crime prediction ML model loaded successfully");
+  } catch (error) {
+    console.error("❌ Failed to load ML model:", error);
+  }
 
   const httpServer = createServer(app);
   return httpServer;

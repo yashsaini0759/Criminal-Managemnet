@@ -1,0 +1,17 @@
+// client/tsconfig.json (INSIDE the 'client' folder) - FINAL
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tsbuildinfo",
+    "noEmit": false, 
+    "module": "ESNext",
+    // Uses bundler resolution for Vite/frontend environment
+    "moduleResolution": "bundler", 
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

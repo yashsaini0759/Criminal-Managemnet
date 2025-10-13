@@ -1,0 +1,1088 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criminal Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                }
+            },
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(210 40% 98%);
+            --foreground: hsl(222 84% 5%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222 84% 5%);
+            --popover: hsl(0 0% 100%);
+            --popover-foreground: hsl(222 84% 5%);
+            --primary: hsl(221 83% 53%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(210 40% 96%);
+            --secondary-foreground: hsl(222 47% 11%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215 16% 47%);
+            --accent: hsl(210 40% 96%);
+            --accent-foreground: hsl(222 47% 11%);
+            --destructive: hsl(0 85% 60%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(214 32% 91%);
+            --input: hsl(214 32% 91%);
+            --ring: hsl(221 83% 53%);
+            --radius: 0.75rem;
+            --font-sans: 'Inter', ui-sans-serif, system-ui;
+        }
+        
+        .dark {
+            --background: hsl(222 84% 5%);
+            --foreground: hsl(210 40% 98%);
+            --card: hsl(222 84% 5%);
+            --card-foreground: hsl(210 40% 98%);
+            --popover: hsl(222 84% 5%);
+            --popover-foreground: hsl(210 40% 98%);
+            --primary: hsl(217 91% 60%);
+            --primary-foreground: hsl(222 47% 11%);
+            --secondary: hsl(217 32% 17%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(217 32% 17%);
+            --muted-foreground: hsl(215 20% 65%);
+            --accent: hsl(217 32% 17%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 63% 31%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(217 32% 17%);
+            --input: hsl(217 32% 17%);
+            --ring: hsl(224 71% 4%);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="font-sans bg-background text-foreground transition-colors duration-200">
+
+    <!-- @COMPONENT: LoginPage [username, password, role selection, remember me] -->
+    <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/5 p-4">
+        <div class="w-full max-w-md">
+            <!-- Logo and Header -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+                    <i class="fas fa-shield-alt text-2xl text-primary-foreground"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-foreground mb-2">Criminal Management System</h1>
+                <p class="text-muted-foreground">Secure access for law enforcement personnel</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="bg-card rounded-lg shadow-lg border border-border p-6">
+                <form data-event="submit:handleLogin">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-card-foreground mb-2">Username</label>
+                            <input type="text" id="username" name="username" 
+                                class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors" 
+                                placeholder="Enter your username" data-bind="loginForm.username">
+                        </div>
+                        
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-card-foreground mb-2">Password</label>
+                            <input type="password" id="password" name="password" 
+                                class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors" 
+                                placeholder="Enter your password" data-bind="loginForm.password">
+                        </div>
+                        
+                        <div>
+                            <label for="role" class="block text-sm font-medium text-card-foreground mb-2">Role</label>
+                            <select id="role" name="role" 
+                                class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors" 
+                                data-bind="loginForm.role">
+                                <option value="admin">Admin</option>
+                                <option value="operator">Operator</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember" name="remember" 
+                                class="h-4 w-4 text-primary focus:ring-ring border-input rounded">
+                            <label for="remember" class="ml-2 block text-sm text-card-foreground">Remember me</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" 
+                        class="w-full mt-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring">
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-muted-foreground">Demo Credentials:</p>
+                    <p class="text-xs text-muted-foreground mt-1">Admin: admin/admin123 | Operator: operator/op123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: LoginPage -->
+
+    <!-- @COMPONENT: MainApplication [user, currentPage, sidebarOpen] -->
+    <div id="mainApp" class="hidden min-h-screen bg-background">
+        <!-- @COMPONENT: Sidebar [navigation, user info, theme toggle] -->
+        <aside id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out z-30">
+            <!-- Sidebar Header -->
+            <div class="flex items-center justify-between p-4 border-b border-border">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-sm text-primary-foreground"></i>
+                    </div>
+                    <h2 class="font-semibold text-card-foreground">CMS</h2>
+                </div>
+                <button id="sidebarToggle" class="lg:hidden text-card-foreground hover:text-primary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- User Info -->
+            <div class="p-4 border-b border-border">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-primary"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-card-foreground" data-bind="user.name">John Smith</p>
+                        <p class="text-sm text-muted-foreground" data-bind="user.role">Administrator</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-1 p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" data-page="dashboard" class="nav-link active flex items-center space-x-3 px-3 py-2 rounded-md text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-chart-dashboard w-5"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="criminals" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-md text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-users w-5"></i>
+                            <span>Criminal Records</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="fir" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-md text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-file-alt w-5"></i>
+                            <span>FIR Records</span>
+                        </a>
+                    </li>
+                    <li data-admin-only="true">
+                        <a href="#" data-page="operators" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-md text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-user-cog w-5"></i>
+                            <span>Operators</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="reports" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-md text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-chart-bar w-5"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Bottom Actions -->
+            <div class="p-4 border-t border-border space-y-2">
+                <button id="themeToggle" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-moon w-5"></i>
+                    <span>Dark Mode</span>
+                </button>
+                <button data-event="click:handleLogout" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-destructive hover:bg-destructive/10 transition-colors">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- Main Content -->
+        <div class="lg:ml-64 min-h-screen">
+            <!-- @COMPONENT: TopBar [page title, breadcrumbs, user actions] -->
+            <header class="bg-card border-b border-border p-4 lg:p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button id="mobileMenuToggle" class="lg:hidden text-card-foreground hover:text-primary">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-2xl font-semibold text-card-foreground" data-bind="currentPage.title">Dashboard</h1>
+                            <p class="text-sm text-muted-foreground" data-bind="currentPage.breadcrumb">Home / Dashboard</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <button class="relative p-2 text-card-foreground hover:text-primary transition-colors">
+                            <i class="fas fa-bell text-lg"></i>
+                            <span class="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></span>
+                        </button>
+                        <!-- Current Time -->
+                        <div class="text-sm text-muted-foreground" data-bind="currentTime">Dec 20, 2024 14:30</div>
+                    </div>
+                </div>
+            </header>
+            <!-- @END_COMPONENT: TopBar -->
+
+            <!-- Page Content -->
+            <main class="p-4 lg:p-6">
+                
+                <!-- @COMPONENT: DashboardPage [stats, charts, recent activities] -->
+                <div id="dashboardPage" class="page-content">
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Total Criminals</p>
+                                    <p class="text-3xl font-bold text-card-foreground" data-bind="stats.totalCriminals">2,847</p>
+                                </div>
+                                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-users text-primary text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-green-600">↗ 12%</span>
+                                <span class="text-muted-foreground ml-2">vs last month</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Active FIRs</p>
+                                    <p class="text-3xl font-bold text-card-foreground" data-bind="stats.activeFirs">156</p>
+                                </div>
+                                <div class="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-file-alt text-amber-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-red-600">↘ 3%</span>
+                                <span class="text-muted-foreground ml-2">vs last month</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Solved Cases</p>
+                                    <p class="text-3xl font-bold text-card-foreground" data-bind="stats.solvedCases">1,923</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-green-600">↗ 8%</span>
+                                <span class="text-muted-foreground ml-2">vs last month</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Pending Cases</p>
+                                    <p class="text-3xl font-bold text-card-foreground" data-bind="stats.pendingCases">924</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-clock text-orange-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-orange-600">→ 0%</span>
+                                <span class="text-muted-foreground ml-2">vs last month</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-lg font-semibold text-card-foreground mb-4">Crime Types Distribution</h3>
+                            <div class="h-64">
+                                <canvas id="crimeTypesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-lg font-semibold text-card-foreground mb-4">Case Status Overview</h3>
+                            <div class="h-64">
+                                <canvas id="caseStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activities -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div class="p-6 border-b border-border">
+                            <h3 class="text-lg font-semibold text-card-foreground">Recent Activities</h3>
+                        </div>
+                        <div class="p-6">
+                            <!-- @MAP: recentActivities.map(activity => ( -->
+                            <div class="flex items-start space-x-4 py-4 border-b border-border last:border-b-0">
+                                <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-plus text-primary text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-card-foreground" data-mock="true">New criminal record added: <strong>Robert Johnson</strong></p>
+                                    <p class="text-xs text-muted-foreground">2 hours ago by Officer Smith</p>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                            
+                            <div class="flex items-start space-x-4 py-4 border-b border-border">
+                                <div class="w-8 h-8 bg-amber-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-edit text-amber-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-card-foreground" data-mock="true">FIR updated: <strong>FIR-2024-001234</strong></p>
+                                    <p class="text-xs text-muted-foreground">5 hours ago by Detective Brown</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-4 py-4">
+                                <div class="w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-card-foreground" data-mock="true">Case closed: <strong>Theft Case #789</strong></p>
+                                    <p class="text-xs text-muted-foreground">1 day ago by Inspector Davis</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: DashboardPage -->
+
+                <!-- @COMPONENT: CriminalRecordsPage [records, search, filters, pagination] -->
+                <div id="criminalRecordsPage" class="page-content hidden">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-foreground">Criminal Records</h2>
+                            <p class="text-muted-foreground">Manage criminal database records</p>
+                        </div>
+                        <button data-event="click:openAddCriminalModal" class="mt-4 lg:mt-0 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Criminal</span>
+                        </button>
+                    </div>
+
+                    <!-- Search and Filters -->
+                    <div class="bg-card rounded-lg border border-border p-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-card-foreground mb-2">Search</label>
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                                    <input type="text" placeholder="Search by name, ID..." class="w-full pl-10 pr-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="searchFilters.query">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-card-foreground mb-2">Crime Type</label>
+                                <select class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="searchFilters.crimeType">
+                                    <option value="">All Types</option>
+                                    <option value="theft">Theft</option>
+                                    <option value="assault">Assault</option>
+                                    <option value="fraud">Fraud</option>
+                                    <option value="robbery">Robbery</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-card-foreground mb-2">Case Status</label>
+                                <select class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="searchFilters.status">
+                                    <option value="">All Status</option>
+                                    <option value="open">Open</option>
+                                    <option value="closed">Closed</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button data-event="click:applyFilters" class="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground px-4 py-2 rounded-md transition-colors">
+                                    Filter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="bg-card rounded-lg border border-border overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-muted">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Photo</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Age</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Crime Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">FIR Number</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    <!-- @MAP: criminalRecords.map(record => ( -->
+                                    <tr class="hover:bg-accent/50 transition-colors" data-mock="true">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <!-- Criminal mugshot photo placeholder -->
+                                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&w=64&h=64&fit=crop&crop=face" alt="Criminal photo" class="w-10 h-10 rounded-full object-cover" data-mock-image="true" data-implementation="Use FileUpload component for criminal photos">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-card-foreground">Robert Johnson</div>
+                                            <div class="text-sm text-muted-foreground">ID: CRM-001234</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">28</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Theft</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">FIR-2024-001234</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full">Pending</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                            <div class="flex space-x-2">
+                                                <button class="text-primary hover:text-primary/80" data-event="click:viewRecord">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="text-amber-600 hover:text-amber-700" data-event="click:editRecord" data-admin-only="true">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="text-destructive hover:text-destructive/80" data-event="click:deleteRecord" data-admin-only="true">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- @END_MAP )) -->
+                                    
+                                    <tr class="hover:bg-accent/50 transition-colors" data-mock="true">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <!-- Criminal mugshot photo placeholder -->
+                                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&w=64&h=64&fit=crop&crop=face" alt="Criminal photo" class="w-10 h-10 rounded-full object-cover">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-card-foreground">Maria Garcia</div>
+                                            <div class="text-sm text-muted-foreground">ID: CRM-001235</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">35</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">Fraud</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">FIR-2024-001235</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Closed</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                            <div class="flex space-x-2">
+                                                <button class="text-primary hover:text-primary/80">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="text-amber-600 hover:text-amber-700" data-admin-only="true">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="text-destructive hover:text-destructive/80" data-admin-only="true">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="bg-muted px-6 py-3 flex items-center justify-between border-t border-border">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <button class="relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-muted-foreground bg-background hover:bg-accent">Previous</button>
+                                <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-muted-foreground bg-background hover:bg-accent">Next</button>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">
+                                        Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">2,847</span> results
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                        <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border bg-background text-sm font-medium text-muted-foreground hover:bg-accent">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <button class="relative inline-flex items-center px-4 py-2 border border-border bg-primary text-sm font-medium text-primary-foreground">1</button>
+                                        <button class="relative inline-flex items-center px-4 py-2 border border-border bg-background text-sm font-medium text-muted-foreground hover:bg-accent">2</button>
+                                        <button class="relative inline-flex items-center px-4 py-2 border border-border bg-background text-sm font-medium text-muted-foreground hover:bg-accent">3</button>
+                                        <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border bg-background text-sm font-medium text-muted-foreground hover:bg-accent">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: CriminalRecordsPage -->
+
+                <!-- @COMPONENT: AddCriminalModal [form fields, photo upload, validation] -->
+                <div id="addCriminalModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div class="bg-card rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b border-border">
+                            <h3 class="text-lg font-semibold text-card-foreground">Add Criminal Record</h3>
+                            <button data-event="click:closeModal" class="text-muted-foreground hover:text-card-foreground">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <form class="p-6" data-event="submit:handleAddCriminal">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Personal Information -->
+                                <div class="space-y-4">
+                                    <h4 class="font-medium text-card-foreground">Personal Information</h4>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-card-foreground mb-2">Full Name *</label>
+                                        <input type="text" required class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.name">
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-card-foreground mb-2">Age *</label>
+                                            <input type="number" min="1" max="100" required class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.age">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-card-foreground mb-2">Gender *</label>
+                                            <select required class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.gender">
+                                                <option value="">Select</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-card-foreground mb-2">Address</label>
+                                        <textarea rows="3" class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.address"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Case Information -->
+                                <div class="space-y-4">
+                                    <h4 class="font-medium text-card-foreground">Case Information</h4>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-card-foreground mb-2">Crime Type *</label>
+                                        <select required class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.crimeType">
+                                            <option value="">Select Crime Type</option>
+                                            <option value="theft">Theft</option>
+                                            <option value="assault">Assault</option>
+                                            <option value="fraud">Fraud</option>
+                                            <option value="robbery">Robbery</option>
+                                            <option value="murder">Murder</option>
+                                            <option value="drug_trafficking">Drug Trafficking</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-card-foreground mb-2">FIR Number</label>
+                                        <input type="text" class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.firNumber" placeholder="Auto-generated if empty">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-card-foreground mb-2">Case Status *</label>
+                                        <select required class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.caseStatus">
+                                            <option value="open">Open</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="closed">Closed</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-card-foreground mb-2">Arrest Date</label>
+                                        <input type="date" class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring" data-bind="criminalForm.arrestDate">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Photo Upload -->
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium text-card-foreground mb-2">Criminal Photo</label>
+                                <div class="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                                    <i class="fas fa-camera text-4xl text-muted-foreground mb-4"></i>
+                                    <p class="text-muted-foreground mb-2">Click to upload or drag and drop</p>
+                                    <p class="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                                    <input type="file" accept="image/*" class="hidden" data-implementation="FileUpload component for criminal photos">
+                                    <button type="button" class="mt-3 bg-secondary hover:bg-secondary/90 text-secondary-foreground px-4 py-2 rounded-md transition-colors">
+                                        Choose File
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Form Actions -->
+                            <div class="flex justify-end space-x-4 mt-6 pt-6 border-t border-border">
+                                <button type="button" data-event="click:closeModal" class="px-4 py-2 border border-border text-card-foreground rounded-md hover:bg-accent transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md transition-colors">
+                                    Add Criminal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: AddCriminalModal -->
+
+                <!-- @COMPONENT: FIRRecordsPage [FIR table, add FIR form, search] -->
+                <div id="firRecordsPage" class="page-content hidden">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-foreground">FIR Records</h2>
+                            <p class="text-muted-foreground">First Information Reports management</p>
+                        </div>
+                        <button data-event="click:openAddFIRModal" class="mt-4 lg:mt-0 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-plus"></i>
+                            <span>Add FIR</span>
+                        </button>
+                    </div>
+
+                    <!-- FIR Search -->
+                    <div class="bg-card rounded-lg border border-border p-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-card-foreground mb-2">Search FIR</label>
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                                    <input type="text" placeholder="FIR number, description..." class="w-full pl-10 pr-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-card-foreground mb-2">Date Range</label>
+                                <input type="date" class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                            </div>
+                            <div class="flex items-end">
+                                <button class="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground px-4 py-2 rounded-md transition-colors">
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FIR Table -->
+                    <div class="bg-card rounded-lg border border-border overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-muted">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">FIR Number</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Criminal Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">FIR Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    <tr class="hover:bg-accent/50 transition-colors" data-mock="true">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-card-foreground">FIR-2024-001234</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Robert Johnson</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 15, 2024</td>
+                                        <td class="px-6 py-4 text-sm text-card-foreground max-w-xs truncate">Theft of electronic items from residential area...</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                            <div class="flex space-x-2">
+                                                <button class="text-primary hover:text-primary/80" data-event="click:viewFIR">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="text-amber-600 hover:text-amber-700" data-event="click:editFIR" data-admin-only="true">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: FIRRecordsPage -->
+
+                <!-- @COMPONENT: OperatorManagementPage [operators table, add operator, edit permissions] -->
+                <div id="operatorsPage" class="page-content hidden" data-admin-only="true">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-foreground">Operator Management</h2>
+                            <p class="text-muted-foreground">Manage system operators and their permissions</p>
+                        </div>
+                        <button data-event="click:openAddOperatorModal" class="mt-4 lg:mt-0 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Add Operator</span>
+                        </button>
+                    </div>
+
+                    <!-- Operators Table -->
+                    <div class="bg-card rounded-lg border border-border overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-muted">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Username</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Last Login</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    <tr class="hover:bg-accent/50 transition-colors" data-mock="true">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-primary text-sm"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <div class="text-sm font-medium text-card-foreground">Sarah Wilson</div>
+                                                    <div class="text-sm text-muted-foreground">ID: OP-001</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">swilson</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Operator</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 20, 2024 09:15</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Active</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                            <div class="flex space-x-2">
+                                                <button class="text-amber-600 hover:text-amber-700" data-event="click:editOperator">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="text-destructive hover:text-destructive/80" data-event="click:deleteOperator">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: OperatorManagementPage -->
+
+                <!-- @COMPONENT: ReportsPage [export options, report generation] -->
+                <div id="reportsPage" class="page-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-semibold text-foreground">Reports & Analytics</h2>
+                        <p class="text-muted-foreground">Generate and export system reports</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Criminal Records Report -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-users text-primary"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-card-foreground">Criminal Records Report</h3>
+                                    <p class="text-sm text-muted-foreground">Export complete criminal database</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-card-foreground mb-2">Date Range</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="date" class="px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                                        <input type="date" class="px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    <button data-event="click:generatePDFReport" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <span>PDF</span>
+                                    </button>
+                                    <button data-event="click:generateExcelReport" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors">
+                                        <i class="fas fa-file-excel"></i>
+                                        <span>Excel</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FIR Records Report -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-file-alt text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-card-foreground">FIR Records Report</h3>
+                                    <p class="text-sm text-muted-foreground">Export FIR database records</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-card-foreground mb-2">Filter Options</label>
+                                    <select class="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                                        <option value="all">All FIRs</option>
+                                        <option value="pending">Pending Only</option>
+                                        <option value="closed">Closed Only</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    <button class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <span>PDF</span>
+                                    </button>
+                                    <button class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors">
+                                        <i class="fas fa-file-excel"></i>
+                                        <span>Excel</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ReportsPage -->
+
+            </main>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: MainApplication -->
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        
+        (() => {
+            let currentUser = null;
+            let currentPage = 'dashboard';
+            let isDarkMode = false;
+
+            // DOM Elements
+            const loginPage = document.getElementById('loginPage');
+            const mainApp = document.getElementById('mainApp');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const themeToggle = document.getElementById('themeToggle');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pageContents = document.querySelectorAll('.page-content');
+
+            // Mock login
+            document.querySelector('[data-event="submit:handleLogin"]')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                // Mock authentication
+                loginPage.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                initializeCharts();
+            });
+
+            // Navigation
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = link.dataset.page;
+                    switchPage(page);
+                });
+            });
+
+            function switchPage(page) {
+                // Update active nav link
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.page === page);
+                    if (link.dataset.page === page) {
+                        link.classList.add('bg-accent', 'text-accent-foreground');
+                    } else {
+                        link.classList.remove('bg-accent', 'text-accent-foreground');
+                    }
+                });
+
+                // Show/hide page content
+                pageContents.forEach(content => {
+                    content.classList.toggle('hidden', !content.id.includes(page));
+                });
+
+                currentPage = page;
+            }
+
+            // Sidebar toggle
+            mobileMenuToggle?.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+            });
+
+            sidebarToggle?.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            });
+
+            sidebarOverlay?.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            });
+
+            // Theme toggle
+            themeToggle?.addEventListener('click', () => {
+                isDarkMode = !isDarkMode;
+                document.documentElement.classList.toggle('dark', isDarkMode);
+                const icon = themeToggle.querySelector('i');
+                const text = themeToggle.querySelector('span');
+                if (isDarkMode) {
+                    icon.className = 'fas fa-sun w-5';
+                    text.textContent = 'Light Mode';
+                } else {
+                    icon.className = 'fas fa-moon w-5';
+                    text.textContent = 'Dark Mode';
+                }
+            });
+
+            // Modal functionality
+            document.querySelector('[data-event="click:openAddCriminalModal"]')?.addEventListener('click', () => {
+                document.getElementById('addCriminalModal').classList.remove('hidden');
+            });
+
+            document.querySelector('[data-event="click:closeModal"]')?.addEventListener('click', () => {
+                document.getElementById('addCriminalModal').classList.add('hidden');
+            });
+
+            // Initialize Charts
+            function initializeCharts() {
+                // Crime Types Chart
+                const ctx1 = document.getElementById('crimeTypesChart');
+                if (ctx1) {
+                    new Chart(ctx1, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Theft', 'Assault', 'Fraud', 'Robbery', 'Drug Trafficking'],
+                            datasets: [{
+                                data: [35, 25, 20, 15, 5],
+                                backgroundColor: [
+                                    'hsl(221 83% 53%)',
+                                    'hsl(142 71% 45%)',
+                                    'hsl(48 96% 53%)',
+                                    'hsl(0 85% 60%)',
+                                    'hsl(262 83% 58%)'
+                                ],
+                                borderWidth: 2,
+                                borderColor: 'var(--background)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Case Status Chart
+                const ctx2 = document.getElementById('caseStatusChart');
+                if (ctx2) {
+                    new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Open', 'Pending', 'Closed', 'Under Investigation'],
+                            datasets: [{
+                                label: 'Cases',
+                                data: [324, 156, 1923, 89],
+                                backgroundColor: 'hsl(221 83% 53%)',
+                                borderColor: 'hsl(221 83% 53%)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Initialize responsive sidebar behavior
+            function handleResize() {
+                if (window.innerWidth >= 1024) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebarOverlay.classList.add('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
+
+            window.addEventListener('resize', handleResize);
+            handleResize(); // Initial check
+
+            // Show login page by default
+            loginPage.classList.remove('hidden');
+        })();
+    </script>
+
+</body>
+</html>

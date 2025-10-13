@@ -1,69 +1,75 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+// shared/schema.ts
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role", { enum: ["admin", "operator"] }).notNull().default("operator"),
-  name: text("name").notNull(),
-  lastLogin: timestamp("last_login"),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+// User Schemas
+export const insertUserSchema = z.object({
+  username: z.string().min(3),
+  password: z.string().min(6),
+  role: z.enum(["admin", "operator"]).optional(),
+  name: z.string().min(1),
 });
 
-export const criminalRecords = pgTable("criminal_records", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  age: integer("age").notNull(),
-  gender: text("gender", { enum: ["male", "female", "other"] }).notNull(),
-  crimeType: text("crime_type").notNull(),
-  firNumber: text("fir_number"),
-  caseStatus: text("case_status", { enum: ["open", "pending", "closed"] }).notNull().default("open"),
-  arrestDate: timestamp("arrest_date"),
-  address: text("address"),
-  photo: text("photo"), // Base64 encoded photo
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
-  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+export const userSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  password: z.string(),
+  role: z.enum(["admin", "operator"]),
+  name: z.string(),
+  lastLogin: z.date().nullable(),
+  isActive: z.boolean(),
+  createdAt: z.date(),
 });
 
-export const firRecords = pgTable("fir_records", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  firNumber: text("fir_number").notNull().unique(),
-  criminalId: varchar("criminal_id").references(() => criminalRecords.id),
-  firDate: timestamp("fir_date").notNull().default(sql`now()`),
-  description: text("description").notNull(),
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
-  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+// Criminal Record Schemas
+export const insertCriminalRecordSchema = z.object({
+  name: z.string().min(1),
+  age: z.number().min(1).max(120),
+  gender: z.enum(["male", "female", "other"]),
+  crimeType: z.string().min(1),
+  firNumber: z.string().optional().nullable(),
+  caseStatus: z.enum(["open", "pending", "closed"]).optional(),
+  arrestDate: z.date().optional().nullable(),
+  address: z.string().optional().nullable(),
+  photo: z.string().optional().nullable(),
 });
 
-// Insert Schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  lastLogin: true,
+export const criminalRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  age: z.number(),
+  gender: z.enum(["male", "female", "other"]),
+  crimeType: z.string(),
+  firNumber: z.string().nullable(),
+  caseStatus: z.enum(["open", "pending", "closed"]),
+  arrestDate: z.date().nullable(),
+  address: z.string().nullable(),
+  photo: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
-export const insertCriminalRecordSchema = createInsertSchema(criminalRecords).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  age: z.number().min(1).max(150),
+// FIR Record Schemas
+export const insertFirRecordSchema = z.object({
+  firNumber: z.string().optional(),
+  criminalId: z.string().optional().nullable(),
+  firDate: z.date().optional(),
+  description: z.string().min(1),
 });
 
-export const insertFirRecordSchema = createInsertSchema(firRecords).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const firRecordSchema = z.object({
+  id: z.string(),
+  firNumber: z.string(),
+  criminalId: z.string().nullable(),
+  firDate: z.date(),
+  description: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
-// Types
-export type User = typeof users.$inferSelect;
+// Type exports
+export type User = z.infer<typeof userSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type CriminalRecord = typeof criminalRecords.$inferSelect;
+export type CriminalRecord = z.infer<typeof criminalRecordSchema>;
 export type InsertCriminalRecord = z.infer<typeof insertCriminalRecordSchema>;
-export type FirRecord = typeof firRecords.$inferSelect;
+export type FirRecord = z.infer<typeof firRecordSchema>;
 export type InsertFirRecord = z.infer<typeof insertFirRecordSchema>;

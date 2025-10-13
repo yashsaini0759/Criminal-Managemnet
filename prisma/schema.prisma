@@ -1,0 +1,57 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------- Models (Tables) -------------------
+
+model User {
+  id        String    @id @default(uuid()) @map("id")
+  username  String    @unique
+  password  String
+  role      String    @default("operator")
+  name      String
+  lastLogin DateTime? @map("last_login")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model CriminalRecord {
+  id          String     @id @default(uuid()) @map("id")
+  name        String
+  age         Int
+  gender      String
+  crimeType   String     @map("crime_type")
+  firNumber   String?    @map("fir_number")
+  caseStatus  String     @default("open") @map("case_status")
+  arrestDate  DateTime?  @map("arrest_date")
+  address     String?
+  photo       String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  firRecords FirRecord[]
+
+  @@map("criminal_records")
+}
+
+model FirRecord {
+  id          String    @id @default(uuid()) @map("id")
+  firNumber   String    @unique @map("fir_number")
+  criminalId  String?   @map("criminal_id")
+  firDate     DateTime  @default(now()) @map("fir_date")
+  description String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  criminal CriminalRecord? @relation(fields: [criminalId], references: [id])
+
+  @@map("fir_records")
+}
